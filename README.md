@@ -15,3 +15,9 @@ mcp dev server.py
 ```
 python server.py
 ```
+Accessible at http://0.0.0.0:8000/mcp by default
+
+3. Run the MCP client that calls a tool on server
+```
+python client.py
+```

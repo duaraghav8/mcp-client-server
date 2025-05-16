@@ -4,7 +4,7 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("Demo", stateless_http=True)
 
 
-@mcp.tool()
+@mcp.tool(name="myserver/add")
 def add(a: int, b: int) -> int:
     """Add two numbers"""
     return a + b
