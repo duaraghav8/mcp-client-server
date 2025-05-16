@@ -1,10 +1,9 @@
 from mcp.server.fastmcp import FastMCP
 
 # Create an MCP server
-mcp = FastMCP("Demo")
+mcp = FastMCP("Demo", stateless_http=True)
 
 
-# Add an addition tool
 @mcp.tool()
 def add(a: int, b: int) -> int:
     """Add two numbers"""
@@ -19,3 +18,8 @@ def subtract(a: int, b: int) -> int:
 def multiply(a: int, b: int) -> int:
     """Multiply two numbers"""
     return a * b
+
+
+if __name__ == "__main__":
+    # Start the server
+    mcp.run(transport="streamable-http")
