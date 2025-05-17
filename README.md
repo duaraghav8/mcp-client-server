@@ -1,7 +1,28 @@
+# MCP Client-Server
+The simplest example of MCP client-server architecture.
+
+The server can be run as a remote MCP server serving HTTP requests.
+
+Client consumes the remote server over HTTP.
+
+
 ### Commands
+One-time setup
+```
+# Setup virtualenv
+python3 -m venv venv
+source venv/bin/activate
+
+# Download all dependencies using uv
+uv install
+```
+
+---
+
 First, activate the virtual environment:
 ```
 source venv/bin/activate
+
 ```
 
 Then proceed with the following:
