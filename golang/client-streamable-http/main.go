@@ -34,6 +34,7 @@ func main() {
 	}
 
 	fmt.Println("Server Info:")
+	fmt.Println(serverInfo.ServerInfo.Name)
 	fmt.Println(serverInfo.Capabilities.Tools)
 
 	fmt.Println("Pinging server...")
