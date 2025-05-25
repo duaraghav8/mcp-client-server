@@ -54,6 +54,14 @@ func main() {
 		fmt.Printf("Tool Name: %s\n", tool.GetName())
 		fmt.Printf("Tool Description: %s\n", tool.Description)
 		fmt.Printf("Tool Input schema: %v\n", tool.InputSchema)
+
+		j, err := tool.MarshalJSON()
+		if err != nil {
+			log.Fatalf("Failed to marshal tool to JSON: %v", err)
+		}
+		fmt.Printf("Tool Raw Input schema: %v\n", string(j))
+
+		fmt.Printf("Annotations: %v\n", tool.Annotations)
 		fmt.Println("==============================")
 	}
 
