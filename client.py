@@ -9,14 +9,14 @@ async def main():
         write_stream,
         _,
     ):
-        print("Inside the main function")
         # Create a session using the client streams
         async with ClientSession(read_stream, write_stream) as session:
             # Initialize the connection
             await session.initialize()
             # Call a tool
             tool_result = await session.call_tool("calculator/multiply", {"a": 7, "b": 10})
-            print(tool_result)
+            print("Result received:")
+            print(tool_result.content[0].text)
 
 if __name__ == "__main__":
     import asyncio
