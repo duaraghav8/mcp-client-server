@@ -11,7 +11,7 @@ import (
 
 func main() {
 	// Replace this with your MCP server URL.
-	serverURL := "http://127.0.0.1:8000/mcp"
+	serverURL := "http://127.0.0.1:8080/mcp"
 
 	// Create the streamable HTTP MCP client using the SDK's helper.
 	mcpClient, err := client.NewStreamableHttpClient(serverURL)
@@ -67,7 +67,7 @@ func main() {
 
 	fmt.Println("Calling tool...")
 	callToolReq := mcp.CallToolRequest{}
-	callToolReq.Params.Name = "multiply"
+	callToolReq.Params.Name = "calculator/subtract"
 	callToolReq.Params.Arguments = map[string]any{
 		"a": 25,
 		"b": 10,
