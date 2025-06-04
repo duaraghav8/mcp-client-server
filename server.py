@@ -1,3 +1,5 @@
+from typing import List
+
 from mcp.server.fastmcp import FastMCP
 
 # Create an MCP server
@@ -18,6 +20,16 @@ def subtract(a: int, b: int) -> int:
 def multiply(a: int, b: int) -> int:
     """Multiply two numbers"""
     return a * b
+
+@mcp.tool()
+def return_list() -> List[str]:
+    """Return a list of strings"""
+    return ["apple", "banana", "cherry"]
+
+@mcp.tool()
+def return_dict() -> dict:
+    """Return a dictionary"""
+    return {"name": "Alice", "age": 30, "city": "New York"}
 
 
 if __name__ == "__main__":
