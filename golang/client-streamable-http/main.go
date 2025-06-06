@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
-	"log"
-
 	"github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/mcp"
+	"log"
+	"os"
 )
 
 func main() {
@@ -81,6 +82,29 @@ func main() {
 		log.Fatalf("Failed to convert content to TextContent: %v", err)
 	}
 	fmt.Println("Tool Result:", textContent.Text)
+
+	fmt.Println("Calling tool to get image...")
+	callToolReq = mcp.CallToolRequest{}
+	callToolReq.Params.Name = "calculator/return_image"
+
+	result, err = mcpClient.CallTool(context.Background(), callToolReq)
+	if err != nil {
+		log.Fatalf("Failed to call tool: %v", err)
+	}
+	imageContent, ok := mcp.AsImageContent(result.Content[0])
+	if !ok {
+		log.Fatalf("Failed to convert content to TextContent: %v", err)
+	}
+	fmt.Println("Tool Result:", imageContent.Data)
+
+	decoded, err := base64.StdEncoding.DecodeString(imageContent.Data)
+	if err != nil {
+		log.Fatalf("Failed to decode base64 image data: %v", err)
+	}
+	err = os.WriteFile("output_image.png", decoded, 0644)
+	if err != nil {
+		log.Fatalf("Failed to write image to disk: %v", err)
+	}
 
 	err = mcpClient.Close()
 	if err != nil {
