@@ -1,6 +1,6 @@
 from typing import List
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Image
 
 # Create an MCP server
 mcp = FastMCP("Demo", stateless_http=True)
@@ -30,6 +30,12 @@ def return_list() -> List[str]:
 def return_dict() -> dict:
     """Return a dictionary"""
     return {"name": "Alice", "age": 30, "city": "New York"}
+
+@mcp.tool()
+def return_image() -> Image:
+    """Return a simple image as bytes"""
+    with open("example-image.png", "rb") as img_file:
+        return Image(data=img_file.read(), format="png")
 
 
 if __name__ == "__main__":
