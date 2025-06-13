@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/mark3labs/mcp-go/client"
+	"github.com/mark3labs/mcp-go/client/transport"
 	"github.com/mark3labs/mcp-go/mcp"
 	"log"
 	"os"
@@ -13,7 +14,12 @@ import (
 func connectToProtectedServer() {
 	serverUrl := "https://hf.co/mcp"
 
-	mcpClient, err := client.NewStreamableHttpClient(serverUrl)
+	mcpClient, err := client.NewStreamableHttpClient(
+		serverUrl,
+		transport.WithHTTPHeaders(map[string]string{
+			"Authorization": "Bearer <HF API TOKEN>",
+		}),
+	)
 
 	if err != nil {
 		log.Fatalf("Failed to create streamable HTTP client: %v", err)
@@ -35,7 +41,22 @@ func connectToProtectedServer() {
 
 	fmt.Println("Server Info:")
 	fmt.Println(serverInfo.ServerInfo.Name)
-	fmt.Println(serverInfo.Capabilities.Tools)
+
+	fmt.Println("Calling tool...")
+	callToolReq := mcp.CallToolRequest{}
+	callToolReq.Params.Name = "model_details"
+	callToolReq.Params.Arguments = map[string]any{
+		"model_id": "microsoft/DialoGPT-large",
+	}
+	result, err := mcpClient.CallTool(context.Background(), callToolReq)
+	if err != nil {
+		log.Fatalf("Failed to call tool: %v", err)
+	}
+	textContent, ok := result.Content[0].(mcp.TextContent)
+	if !ok {
+		log.Fatalf("Failed to convert content to TextContent: %v", err)
+	}
+	fmt.Println("Tool Result:", textContent.Text)
 }
 
 func connectToServer() {
@@ -142,5 +163,5 @@ func connectToServer() {
 
 func main() {
 	connectToServer()
-	// connectToProtectedServer()
+	connectToProtectedServer()
 }
