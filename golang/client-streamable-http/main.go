@@ -10,7 +10,35 @@ import (
 	"os"
 )
 
-func main() {
+func connectToProtectedServer() {
+	serverUrl := "https://hf.co/mcp"
+
+	mcpClient, err := client.NewStreamableHttpClient(serverUrl)
+
+	if err != nil {
+		log.Fatalf("Failed to create streamable HTTP client: %v", err)
+	}
+
+	fmt.Println("Initializing client...")
+	initRequest := mcp.InitializeRequest{}
+	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
+	initRequest.Params.ClientInfo = mcp.Implementation{
+		Name:    "MCP client using streamable http",
+		Version: "0.0.1",
+	}
+	initRequest.Params.Capabilities = mcp.ClientCapabilities{}
+
+	serverInfo, err := mcpClient.Initialize(context.Background(), initRequest)
+	if err != nil {
+		log.Fatalf("Failed to initialize client: %v", err)
+	}
+
+	fmt.Println("Server Info:")
+	fmt.Println(serverInfo.ServerInfo.Name)
+	fmt.Println(serverInfo.Capabilities.Tools)
+}
+
+func connectToServer() {
 	// Replace this with your MCP server URL.
 	serverURL := "http://127.0.0.1:8080/mcp"
 
@@ -110,4 +138,9 @@ func main() {
 	if err != nil {
 		return
 	}
+}
+
+func main() {
+	connectToServer()
+	// connectToProtectedServer()
 }
