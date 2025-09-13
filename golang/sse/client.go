@@ -30,7 +30,7 @@ func main() {
 
 	// Receive async notifications (server->client) over SSE
 	cli.OnNotification(func(n mcp.JSONRPCNotification) {
-		log.Printf("notification: method=%s data=%v", n.Method, n.Params)
+		log.Printf("notification received: method=%s data=%v", n.Method, n.Params)
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

@@ -49,6 +49,22 @@ func main() {
 
 	log.Println("SSE MCP server listening on http://localhost:9000 (SSE: /mcp/sse, POST: /mcp/message)")
 
+	// 5) Send notifications periodically
+	go func() {
+		time.Sleep(10 * time.Second) // wait a moment for client to connect
+		for i := 1; i <= 5; i++ {
+			msg := map[string]any{
+				"info":  "server notification",
+				"count": i,
+				"time":  time.Now().Format(time.RFC3339),
+			}
+			log.Printf("Sending notification #%d to all clients", i)
+			// method name is arbitrary; client will see it in n.Method
+			s.SendNotificationToAllClients("server/ping", msg)
+			time.Sleep(2 * time.Second)
+		}
+	}()
+
 	// Wait for signal
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
