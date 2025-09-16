@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -16,12 +17,33 @@ import (
 )
 
 func main() {
+	var (
+		mu       sync.RWMutex
+		sessions = make(map[string]struct{}) // sessionID -> present
+	)
+
+	hooks := &server.Hooks{}
+	hooks.AddOnRegisterSession(func(ctx context.Context, sess server.ClientSession) {
+		mu.Lock()
+		defer mu.Unlock()
+		sessions[sess.SessionID()] = struct{}{}
+		log.Printf("[sessions] + %s (now %d)", sess.SessionID(), len(sessions))
+	})
+
+	hooks.AddOnUnregisterSession(func(ctx context.Context, sess server.ClientSession) {
+		mu.Lock()
+		defer mu.Unlock()
+		delete(sessions, sess.SessionID())
+		log.Printf("[sessions] - %s (now %d)", sess.SessionID(), len(sessions))
+	})
+
 	// 1) Core MCP server (name/version are arbitrary)
 	s := server.NewMCPServer(
 		"mcp-go-sse-demo",
 		"0.1.0",
 		server.WithLogging(),               // enable logging notifications
 		server.WithToolCapabilities(false), // advertise tools
+		server.WithHooks(hooks),
 	)
 
 	// 2) Register simple tools
@@ -61,6 +83,30 @@ func main() {
 			log.Printf("Sending notification #%d to all clients", i)
 			// method name is arbitrary; client will see it in n.Method
 			s.SendNotificationToAllClients("server/ping", msg)
+			time.Sleep(2 * time.Second)
+
+			var target string
+			mu.RLock()
+			for sid := range sessions {
+				target = sid
+				break
+			}
+			mu.RUnlock()
+
+			fmt.Println("Sending private notification to ", target)
+
+			err := s.SendNotificationToSpecificClient(
+				target,
+				"server/ping",
+				map[string]any{
+					"info": "private message to this MF",
+					"time": time.Now().Format(time.RFC3339),
+				},
+			)
+			if err != nil {
+				fmt.Printf("Failed to send private notification: %v", err)
+			}
+
 			time.Sleep(2 * time.Second)
 		}
 	}()

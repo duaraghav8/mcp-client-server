@@ -33,8 +33,9 @@ func main() {
 		log.Printf("notification received: method=%s data=%v", n.Method, n.Params)
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	//defer cancel()
+	ctx := context.Background()
 
 	// 1) Connect transport (SSE GET + POST wiring)
 	if err := cli.Start(ctx); err != nil {
@@ -71,7 +72,7 @@ func main() {
 	//    Change "ping" and arguments to something your server actually implements.
 	tryCall(ctx, cli, "ping", map[string]any{"message": "hello from mcp-go SSE client"})
 
-	time.Sleep(20 * time.Second)
+	time.Sleep(60 * time.Second)
 }
 
 func tryCall(ctx context.Context, cli *mcpc.Client, tool string, args map[string]any) {
