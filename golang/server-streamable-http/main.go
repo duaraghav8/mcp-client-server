@@ -6,11 +6,21 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/server"
 	"math/rand"
 	"time"
+
+	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/server"
 )
+
+type CustomMCPServer struct {
+	*server.MCPServer
+}
+
+func (s *CustomMCPServer) AddTool(tool mcp.Tool, handler server.ToolHandlerFunc) {
+	fmt.Printf("********** Adding tool: %s\n", tool.Name)
+	s.MCPServer.AddTool(tool, handler)
+}
 
 func main() {
 	mcpServer := server.NewMCPServer(
@@ -18,6 +28,7 @@ func main() {
 		"1.0.0",
 		server.WithToolCapabilities(true),
 	)
+	customServer := &CustomMCPServer{mcpServer}
 
 	echoTool := mcp.NewTool(
 		"echo",
@@ -28,15 +39,21 @@ func main() {
 			mcp.Required(),
 		),
 	)
-	mcpServer.AddTool(echoTool, handleEchoToolCall)
+	customServer.AddTool(echoTool, handleEchoToolCall)
 
 	audioTool := mcp.NewTool(
 		"return_audio",
 		mcp.WithDescription("returns random audio"),
 	)
-	mcpServer.AddTool(audioTool, handleAudioToolCall)
+	customServer.AddTool(audioTool, handleAudioToolCall)
 
-	httpServer := server.NewStreamableHTTPServer(mcpServer)
+	structuredContentTool := mcp.NewTool(
+		"structured_content",
+		mcp.WithDescription("returns structured content"),
+	)
+	customServer.AddTool(structuredContentTool, handleStructuredContentCall)
+
+	httpServer := server.NewStreamableHTTPServer(customServer.MCPServer)
 	fmt.Printf("Listening on port :9000/mcp\n")
 	if err := httpServer.Start(":9000"); err != nil {
 		fmt.Printf("Failed to start server: %v\n", err)
@@ -104,4 +121,25 @@ func handleAudioToolCall(ctx context.Context, request mcp.CallToolRequest) (*mcp
 			mcp.NewAudioContent(encoded, "audio/wav"),
 		},
 	}, nil
+}
+
+func handleStructuredContentCall(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	structuredData := map[string]interface{}{
+		"title":       "Sample Structured Content",
+		"description": "This is an example of structured content returned by a tool.",
+		"items": []map[string]interface{}{
+			{
+				"id":    1,
+				"name":  "Item One",
+				"value": 100,
+			},
+			{
+				"id":    2,
+				"name":  "Item Two",
+				"value": 200,
+			},
+		},
+	}
+
+	return mcp.NewToolResultStructured(map[string]any{"data": structuredData}, "Returned structured data"), nil
 }
