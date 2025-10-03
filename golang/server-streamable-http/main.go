@@ -78,6 +78,17 @@ func handleEchoToolCall(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	if !ok {
 		return nil, fmt.Errorf("invalid message argument")
 	}
+
+	embedded := mcp.EmbeddedResource{
+		Type: "resource",
+		Resource: mcp.TextResourceContents{
+			URI:      "resource://embedded-tool",
+			MIMEType: "text/plain",
+			Text:     "This is embedded resource content!",
+		},
+		Meta: nil,
+	}
+
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
 			mcp.TextContent{
@@ -90,6 +101,7 @@ func handleEchoToolCall(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 				"An example text resource",
 				"text/plain",
 			),
+			embedded,
 		},
 	}, nil
 }
