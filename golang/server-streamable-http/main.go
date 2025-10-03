@@ -53,6 +53,14 @@ func main() {
 	)
 	customServer.AddTool(structuredContentTool, handleStructuredContentCall)
 
+	myResource := mcp.NewResource(
+		"file://sample.txt",
+		"sample_text_file",
+		mcp.WithResourceDescription("Sample text file resource"),
+		mcp.WithMIMEType("text/plain"),
+	)
+	customServer.AddResource(myResource, resourceHandler)
+
 	httpServer := server.NewStreamableHTTPServer(customServer.MCPServer)
 	fmt.Printf("Listening on port :9000/mcp\n")
 	if err := httpServer.Start(":9000"); err != nil {
@@ -76,6 +84,12 @@ func handleEchoToolCall(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 				Type: "text",
 				Text: fmt.Sprintf("Echo: %s", message),
 			},
+			mcp.NewResourceLink(
+				"file:///example/resource.txt",
+				"sample text",
+				"An example text resource",
+				"text/plain",
+			),
 		},
 	}, nil
 }
@@ -142,4 +156,14 @@ func handleStructuredContentCall(ctx context.Context, request mcp.CallToolReques
 	}
 
 	return mcp.NewToolResultStructured(map[string]any{"data": structuredData}, "Returned structured data"), nil
+}
+
+func resourceHandler(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+	return []mcp.ResourceContents{
+		mcp.TextResourceContents{
+			URI:      "file://sample.txt",
+			MIMEType: "text/plain",
+			Text:     "Hello, this is a sample text file content.",
+		},
+	}, nil
 }
