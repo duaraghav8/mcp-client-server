@@ -22,6 +22,16 @@ func (s *CustomMCPServer) AddTool(tool mcp.Tool, handler server.ToolHandlerFunc)
 	s.MCPServer.AddTool(tool, handler)
 }
 
+type Person struct {
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+}
+
+type InputSchema struct {
+	Sender   Person `json:"sender"`
+	Receiver Person `json:"receiver"`
+}
+
 type OutputSchema struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
@@ -69,6 +79,7 @@ func main() {
 	withSchemaTool := mcp.NewTool(
 		"tool_with_output_schema",
 		mcp.WithDescription("has schema for output"),
+		mcp.WithInputSchema[InputSchema](),
 		mcp.WithOutputSchema[OutputSchema](),
 	)
 	customServer.AddTool(withSchemaTool, handleWithSchemaCall)
