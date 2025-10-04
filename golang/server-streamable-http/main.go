@@ -22,6 +22,11 @@ func (s *CustomMCPServer) AddTool(tool mcp.Tool, handler server.ToolHandlerFunc)
 	s.MCPServer.AddTool(tool, handler)
 }
 
+type OutputSchema struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
 func main() {
 	mcpServer := server.NewMCPServer(
 		"math-tools",
@@ -60,6 +65,13 @@ func main() {
 		mcp.WithMIMEType("text/plain"),
 	)
 	customServer.AddResource(myResource, resourceHandler)
+
+	withSchemaTool := mcp.NewTool(
+		"tool_with_output_schema",
+		mcp.WithDescription("has schema for output"),
+		mcp.WithOutputSchema[OutputSchema](),
+	)
+	customServer.AddTool(withSchemaTool, handleWithSchemaCall)
 
 	httpServer := server.NewStreamableHTTPServer(customServer.MCPServer)
 	fmt.Printf("Listening on port :9000/mcp\n")
@@ -178,4 +190,12 @@ func resourceHandler(ctx context.Context, request mcp.ReadResourceRequest) ([]mc
 			Text:     "Hello, this is a sample text file content.",
 		},
 	}, nil
+}
+
+func handleWithSchemaCall(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	output := OutputSchema{
+		Title:       "Sample Title",
+		Description: "This is a sample description.",
+	}
+	return mcp.NewToolResultStructured(output, "Data returned in structured format"), nil
 }
