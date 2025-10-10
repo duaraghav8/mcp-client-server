@@ -84,6 +84,10 @@ func main() {
 	)
 	customServer.AddTool(withSchemaTool, handleWithSchemaCall)
 
+	egPrompt := mcp.NewPrompt("echo")
+
+	customServer.AddPrompt(egPrompt, egPromptHandler)
+
 	httpServer := server.NewStreamableHTTPServer(customServer.MCPServer)
 	fmt.Printf("Listening on port :9000/mcp\n")
 	if err := httpServer.Start(":9000"); err != nil {
@@ -209,4 +213,18 @@ func handleWithSchemaCall(ctx context.Context, request mcp.CallToolRequest) (*mc
 		Description: "This is a sample description.",
 	}
 	return mcp.NewToolResultStructured(output, "Data returned in structured format"), nil
+}
+
+func egPromptHandler(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+	messages := []mcp.PromptMessage{
+		{
+			Role:    mcp.RoleAssistant,
+			Content: mcp.NewTextContent("This is a sample text file content."),
+		},
+	}
+	return &mcp.GetPromptResult{
+		Result:      mcp.Result{},
+		Description: "Yeh le tera prompt result",
+		Messages:    messages,
+	}, nil
 }
