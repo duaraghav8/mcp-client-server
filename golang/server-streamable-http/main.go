@@ -84,7 +84,14 @@ func main() {
 	)
 	customServer.AddTool(withSchemaTool, handleWithSchemaCall)
 
-	egPrompt := mcp.NewPrompt("echo")
+	egPrompt := mcp.NewPrompt(
+		"echo",
+		mcp.WithArgument(
+			"message",
+			mcp.RequiredArgument(),
+			mcp.ArgumentDescription("Message to echo"),
+		),
+	)
 
 	customServer.AddPrompt(egPrompt, egPromptHandler)
 
@@ -216,10 +223,15 @@ func handleWithSchemaCall(ctx context.Context, request mcp.CallToolRequest) (*mc
 }
 
 func egPromptHandler(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+	message, ok := request.Params.Arguments["message"]
+	if !ok {
+		message = "No message provided"
+	}
+
 	messages := []mcp.PromptMessage{
 		{
 			Role:    mcp.RoleAssistant,
-			Content: mcp.NewTextContent("This is a sample text file content."),
+			Content: mcp.NewTextContent("Your message: " + message),
 		},
 	}
 	return &mcp.GetPromptResult{
