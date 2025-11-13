@@ -5,17 +5,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"os/exec"
 	"runtime"
 
 	"github.com/mark3labs/mcp-go/client"
+	"github.com/mark3labs/mcp-go/client/transport"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
 const (
 	// Replace with your MCP server URL
 	serverURL = "https://huggingface.co/mcp?login"
+	//serverURL = "https://mcp.deepwiki.com/mcp"
 	// Use a localhost redirect URI for this example
 	redirectURI = "http://localhost:8085/oauth/callback"
 )
@@ -24,17 +25,72 @@ func main() {
 	// Create a token store to persist tokens
 	tokenStore := client.NewMemoryTokenStore()
 
-	// Create OAuth configuration
-	oauthConfig := client.OAuthConfig{
-		// Client ID can be empty if using dynamic registration
-		ClientID:     os.Getenv("MCP_CLIENT_ID"),
-		ClientSecret: os.Getenv("MCP_CLIENT_SECRET"),
-		RedirectURI:  redirectURI,
-		Scopes:       []string{"openid", "profile", "read-mcp"},
-		TokenStore:   tokenStore,
-		PKCEEnabled:  true, // Enable PKCE for public clients
+	c := createConn(tokenStore)
+	//defer c.Close()
+
+	callToolReq := mcp.CallToolRequest{}
+	callToolReq.Params.Name = "hf_whoami"
+	callToolReq.Params.Arguments = map[string]any{}
+
+	resp, err := c.CallTool(context.Background(), callToolReq)
+	if err != nil {
+		log.Fatalf("Failed to call tool: %v", err)
+	}
+	fmt.Printf("Response from callTool: %v\n", resp)
+
+	fmt.Println(resp.Content)
+	fmt.Println(resp.StructuredContent)
+
+	fmt.Println("-------------------------------")
+
+	callToolReq = mcp.CallToolRequest{}
+	callToolReq.Params.Name = "space_search"
+	callToolReq.Params.Arguments = map[string]any{
+		"query": "openai/gpt-oss-120b",
+		"limit": 3,
 	}
 
+	resp, err = c.CallTool(context.Background(), callToolReq)
+	if err != nil {
+		log.Fatalf("Failed to call tool space_search: %v", err)
+	}
+	fmt.Printf("Response from callTool space_search: %v\n", resp)
+	fmt.Println(resp.Content)
+	fmt.Println(resp.StructuredContent)
+
+	fmt.Println("-------------------------------")
+	fmt.Println("Closing current connection...")
+	c.Close()
+
+	fmt.Println("opening new connection...")
+
+	fmt.Println("Here are the tokens:")
+	fmt.Println(tokenStore.GetToken(context.Background()))
+
+	fmt.Println("Not expecting to re-authorize...")
+
+	nc := createConn(tokenStore)
+	defer nc.Close()
+
+	resp, err = nc.CallTool(context.Background(), callToolReq)
+	if err != nil {
+		log.Fatalf("Failed to call tool space_search: %v", err)
+	}
+	fmt.Printf("Response from callTool space_search: %v\n", resp)
+	fmt.Println(resp.Content)
+	fmt.Println(resp.StructuredContent)
+
+	fmt.Println("All done!")
+}
+
+func createConn(tokenStore transport.TokenStore) *client.Client {
+	// Create OAuth configuration
+	oauthConfig := client.OAuthConfig{
+		RedirectURI: redirectURI,
+		//Scopes:       []string{"openid", "profile", "read-mcp"},
+		TokenStore:  tokenStore,
+		PKCEEnabled: true, // Enable PKCE for public clients
+	}
 	// Create the client with OAuth support
 	c, err := client.NewOAuthStreamableHttpClient(serverURL, oauthConfig)
 	if err != nil {
@@ -49,10 +105,7 @@ func main() {
 		}
 	}
 
-	defer c.Close()
-
-	// Try to initialize the client
-	result, err := c.Initialize(context.Background(), mcp.InitializeRequest{
+	initReq := mcp.InitializeRequest{
 		Params: struct {
 			ProtocolVersion string                 `json:"protocolVersion"`
 			Capabilities    mcp.ClientCapabilities `json:"capabilities"`
@@ -60,27 +113,20 @@ func main() {
 		}{
 			ProtocolVersion: mcp.LATEST_PROTOCOL_VERSION,
 			ClientInfo: mcp.Implementation{
-				Name:    "mcp-go-oauth-example",
+				Name:    "MCP sample app oauth tester",
 				Version: "0.1.0",
 			},
 		},
-	})
+	}
+
+	// Try to initialize the client
+	result, err := c.Initialize(context.Background(), initReq)
+
+	fmt.Println(err)
 
 	if err != nil {
 		maybeAuthorize(err)
-		result, err = c.Initialize(context.Background(), mcp.InitializeRequest{
-			Params: struct {
-				ProtocolVersion string                 `json:"protocolVersion"`
-				Capabilities    mcp.ClientCapabilities `json:"capabilities"`
-				ClientInfo      mcp.Implementation     `json:"clientInfo"`
-			}{
-				ProtocolVersion: mcp.LATEST_PROTOCOL_VERSION,
-				ClientInfo: mcp.Implementation{
-					Name:    "mcp-go-oauth-example",
-					Version: "0.1.0",
-				},
-			},
-		})
+		result, err = c.Initialize(context.Background(), initReq)
 		if err != nil {
 			log.Fatalf("Failed to initialize client: %v", err)
 		}
@@ -90,18 +136,7 @@ func main() {
 		result.ServerInfo.Name,
 		result.ServerInfo.Version)
 
-	callToolReq := mcp.CallToolRequest{}
-	callToolReq.Params.Name = "hf_whoami"
-	callToolReq.Params.Arguments = map[string]any{}
-
-	resp, err := c.CallTool(context.Background(), callToolReq)
-	if err != nil {
-		log.Fatalf("Failed to call tool: %v", err)
-	}
-	fmt.Printf("Response from callTool: %v\n", resp)
-
-	fmt.Println(resp.Content)
-	fmt.Println(resp.StructuredContent)
+	return c
 }
 
 func maybeAuthorize(err error) {
